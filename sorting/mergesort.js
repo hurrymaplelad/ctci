@@ -34,4 +34,5 @@ function merge(left, right) {
   return results;
 }
 
+console.log(mergeSort([5,1]));
 console.log(mergeSort([1,5,3,98,3,2432,0]));
