@@ -39,27 +39,44 @@ var romanToIntRTL = function(s) {
 };
 
 /* Read left to right, with 1 lookback */
-var romanToInt = function(s) {
+const INF = Number.POSITIVE_INFINITY;
+var romanToIntLTRLookback = function(s) {
     if(!s || s.length < 1) {
         return 0;
     }
     let total = 0;
-    let prev = Number.POSITIVE_INFINITY;
+    let prev = ∞;
     for(let l of s) {
         let v = VALUES[l];
         if(v > prev) {
             total += v - prev;
-            prev = Number.POSITIVE_INFINITY;
+            prev = INF;
         } else {
-            if(prev != Number.POSITIVE_INFINITY) {
+            if(prev != INF) {
                 total += prev;
             }
             prev = v;
         }
     }
-    if(prev != Number.POSITIVE_INFINITY) {
+    if(prev != INF) {
         total += prev;
     }
 
+    return total;
+};
+
+/* Read left to right, lookahead 1 */
+var romanToIntLTRLookahead = function(s) {
+    let total = 0;
+    let digits = s.split('').map((c) => VALUES[c]);
+    for(let i=0; i < digits.length-1; i++) {
+        let v = digits[i];
+        if(v < digits[i+1]) {
+            total -= v;
+        } else {
+            total += v;
+        }
+    }
+    total += digits.pop();
     return total;
 };
