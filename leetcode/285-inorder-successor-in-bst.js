@@ -18,37 +18,17 @@
  *
  * Given 3:
  *   traverse 4 2 3, pop to root, return 4
-
- Edge cases:
- - found root
- - no right child
- - last right child
  */
 var inorderSuccessor = function(root, p) {
-    function find(node) {
-        if(node === p) {
-            return nextInOrder(node.right);
-        }
-        if(!node) {
-            return null;
-        }
-
-        let next = null;
-        if(p.val < node.val) {
-            // left
-            next = find(node.left);
-            if(!next) {
-                next = node;
-            }
+    let next = null;
+    while(root) {
+        if(p.val < root.val) {
+            // this could be the next larger
+            next = root;
+            root = root.left;
         } else {
-            // right
-            next = find(node.right);
+            root = root.right;
         }
-        return next;
     }
-    return find(root);
-};
-
-function nextInOrder(node) {
-  return node && (nextInOrder(node.left) || node);
+    return next;
 }
