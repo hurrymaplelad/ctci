@@ -1,5 +1,5 @@
 /**
- * O(N) time, O(1) space.
+ * O(N) time, O(N) space.
  * @param {string} s
  * @return {number}
  */
