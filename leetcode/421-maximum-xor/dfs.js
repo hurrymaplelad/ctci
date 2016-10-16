@@ -51,6 +51,7 @@ var findMaximumXOR = function(nums) {
         }
     }
 
+    // Find the MSB obtainable via XOR
     let i=31, groupA, groupB;
     do {
         groupA = nums.filter(hasBitAtI(1, i));
