@@ -1,0 +1,29 @@
+import collections
+
+class MovingAverage(object):
+
+    def __init__(self, size):
+        """
+        Initialize your data structure here.
+        :type size: int
+        """
+        self.size = size
+        self.q = collections.deque()
+        self.total = 0
+
+
+    def next(self, val):
+        """
+        :type val: int
+        :rtype: float
+        """
+        self.total += val
+        self.q.append(val)
+        if len(self.q) > self.size:
+            self.total -= self.q.popleft()
+        return (1.0 * self.total) / len(self.q)
+
+
+# Your MovingAverage object will be instantiated and called as such:
+# obj = MovingAverage(size)
+# param_1 = obj.next(val)
