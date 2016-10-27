@@ -18,73 +18,85 @@ function isRightChild(x) {
 }
 
 /*
- * Ex: path 0101 encodes as        010110
+ * Returns the integer encoding the input bit path
+ * without the last bit.
+ * Ex: path 0101 (lrlr) encodes as 010110
  *     one step back is encoded as 010100
  *     another step back is        011000
  */
-function reducePath(x) {
+function shortenBitPath(x) {
   return (
     x - lsbMask(x) // clear lsb
     | tailMask(x)  // move lsb up one
   );
 }
 
+/**
+ * Encoding a binary tree in an array using bit paths
+ * is simplest with indicies starting at 1. We offset
+ * all path operations by -1 to save space.
+ */
 class BITree {
-  constructor (sizes, idx=0) {
-    let size = sizes[idx];
+  constructor (sizes, dimension=0) {
+    let size = sizes[dimension];
     // next larger power of 2
     let k = Math.ceil(Math.log(size + 1) / Math.log(2));
-    this.maxIndex = (1 << k) - 1;
-    this.rootIndex = 1 << (k-1);
-    this.cumulative = new Array(2 * size);
+    // index into vectors
+    this.dimension = dimension;
+    this.isLastDimension = (dimension === sizes.length - 1);
+    // exclusive
+    this.indexCap = (1 << k) - 1;
+    // index of the root of the tree
+    this.rootIndex = (1 << (k-1)) - 1;
+    // holds the next dimesion of sums, or
+    // the cumulative values for the last dimension.
+    this.cumulative = new Array(this.indexCap);
 
-    for(let i=1; i<=this.maxIndex; i++) {
-      this.cumulative[i] = ((idx < sizes.length - 1) ?
-        new BITree(sizes, idx+1) :
-        0
+    for(let i=0; i<this.indexCap; i++) {
+      this.cumulative[i] = (this.isLastDimension ? 0 :
+        new BITree(sizes, dimension+1)
      );
     }
-
   }
 
   /**
    * Returns the cumulative total of values through index i.
    */
-  get(vector, idx=0) {
-    let i = vector[idx];
-    let lastDimension = (idx === vector.length - 1);
+  get(vector) {
+    let i = vector[this.dimension];
     let total = 0;
-    while(i) {
-      let partial = (lastDimension ?
+    while(i+1) {
+      let partial = (this.isLastDimension ?
         this.cumulative[i] :
         // recurse into the next dimension
-        this.cumulative[i].get(vector, idx+1)
+        this.cumulative[i].get(vector)
       );
       total += partial;
-      i -= lsbMask(i);
+      // (i + 1) - lsbMask(i + 1) - 1
+      i -= lsbMask(i+1);
     }
     return total;
   }
 
-  update(vector, diff, idx=0) {
-    let i = vector[idx];
-    let lastDimension = (idx === vector.length - 1);
+  update(vector, diff) {
+    let i = vector[this.dimension];
     let shouldAccumulate = true;
-    while(i && i <= this.maxIndex) {
-      if(shouldAccumulate){
-        if(lastDimension) {
+    // Propagate up the tree, applying the diff
+    // whenever we came from a left child
+    while(i < this.indexCap) {
+      if(!shouldAccumulate){
+        // no op
+      } else if(this.isLastDimension) {
           this.cumulative[i] += diff;
-        } else {
-          this.cumulative[i].update(vector, diff, idx+1);
-        }
+      } else {
+          this.cumulative[i].update(vector, diff);
       }
-      shouldAccumulate = !isRightChild(i);
-      i = reducePath(i);
+      shouldAccumulate = !isRightChild(i+1);
+      i = shortenBitPath(i+1) - 1;
     }
   }
 
   toString() {
-    // return this.cumulative.map((x) => x.toString());
     return this.cumulative.map((x) => x.toString());
   }
 }
@@ -101,7 +113,7 @@ var NumMatrix = function(matrix) {
     for(let r=0; r<matrix.length; r++) {
       let row = matrix[r];
       for(let c=0; c<row.length; c++) {
-        this.biTree.update([r+1, c+1], row[c]);
+        this.biTree.update([r, c], row[c]);
       }
     }
 };
@@ -113,7 +125,7 @@ var NumMatrix = function(matrix) {
  * @return {void}
  */
 NumMatrix.prototype.update = function(row, col, val) {
-  this.biTree.update([row+1, col+1], val - this.matrix[row][col]);
+  this.biTree.update([row, col], val - this.matrix[row][col]);
   this.matrix[row][col] = val;
 };
 
@@ -126,10 +138,10 @@ NumMatrix.prototype.update = function(row, col, val) {
  */
 NumMatrix.prototype.sumRegion = function(row1, col1, row2, col2) {
     return (
-      this.biTree.get([row2+1, col2+1])
-      - this.biTree.get([row1, col2+1])
-      - this.biTree.get([row2+1, col1])
-      + this.biTree.get([row1, col1])
+      this.biTree.get([row2, col2])
+      - this.biTree.get([row1-1, col2])
+      - this.biTree.get([row2, col1-1])
+      + this.biTree.get([row1-1, col1-1])
     );
 };
 
